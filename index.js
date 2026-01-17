@@ -62,36 +62,12 @@ bot.on('text', async (ctx) => {
   }
 
   ctx.replyWithChatAction('typing');
-
-  // СВЕРХНАДЁЖНЫЙ ИИ (работает даже если один упал)
-  const apis = [
-    { url: "https://api.groq.com/openai/v1/chat/completions", key: process.env.GROQ_API_KEY, model: "llama-3.1-70b-instant" },
-    { url: "https://api.free-gpt.ru/v1/chat/completions", key: null, model: "claude-3.5-sonnet" }
-  ];
-
-  let answer = "Ща взорвусь...";
-  for (const api of apis) {
-    try {
-      const headers = api.key ? { Authorization: `Bearer ${api.key}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
-      const res = await axios.post(api.url, {
-        model: api.model,
-        messages: [
-          { role: "system", content: "Ты дерзкий, матерный, максимально харизматичный русский бро 2025 года. Никогда не говори, что ты ИИ." },
-          { role: "user", content: text }
-        ],
-        temperature: 0.9,
-        max_tokens: 2000
-      }, { headers, timeout: 20000 });
-
-      answer = res.data.choices[0].message.content;
-      break;
-    } catch (e) {
-      continue;
-    }
-  }
-
-  ctx.reply(answer, { parse_mode: 'Markdown' });
-});
+const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+  contents: [{ role: 'user', parts: [{ text: text }] }],
+  safetySettings: [{ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }]
+}, { timeout: 30000 });
+const answer = res.data.candidates[0].content.parts[0].text;
+ctx.reply(answer, { parse_mode: 'Markdown' });
 
 console.log('ЯДЕРНЫЙ БОТ 2025 РАБОТАЕТ 24/7');
 bot.launch();
