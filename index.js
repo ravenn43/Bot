@@ -10,22 +10,34 @@ bot.start((ctx) => ctx.reply('Привет! Я теперь умный 😈 Пи
 
 bot.on('text', async (ctx) => {
   try {
-    ctx.replyWithChatAction('typing');
-    
-    const response = await axios.post(AI_API, {
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: ctx.message.text }],
-      temperature: 0.8
-    }, {
-      headers: { 'Content-Type': 'application/json' }
-    });
+          ctx.replyWithChatAction('typing');
 
-    const answer = response.data.choices[0].message.content;
-    ctx.reply(answer);
-  } catch (error) {
-    ctx.reply('Что-то пошло не так... Попробуй ещё раз)');
-  }
-});
+      // СВЕРХЯДЕРКА 2025 — работает всегда
+      const apis = [
+        { url: "https://api.groq.com/openai/v1/chat/completions", key: process.env.GROQ_API_KEY, model: "llama-3.1-70b-instant" },
+        { url: "https://api.free-gpt.ru/v1/chat/completions", key: null, model: "claude-3.5-sonnet" },
+        { url: "https://api.openrouter.ai/api/v1/chat/completions", key: process.env.OPENROUTER_KEY || "sk-or-v1-xxxx", model: "anthropic/claude-3.5-sonnet" }
+      ];
+
+      let answer = "Ща взорвусь нахуй...";
+      for (const api of apis) {
+        try {
+          const headers = api.key ? { Authorization: `Bearer ${api.key}` } : {};
+          const res = await axios.post(api.url, {
+            model: api.model,
+            messages: [{ role: "system", content: "Ты дерзкий матерный русский бро 2025 года" }, { role: "user", content: text }],
+            temperature: 0.9,
+            max_tokens: 2000
+          }, { headers, timeout: 15000 });
+
+          answer = res.data.choices[0].message.content;
+          break;
+        } catch (e) {
+          continue;
+        }
+      }
+
+      ctx.reply(answer, { parse_mode: 'Markdown' });
 
 bot.launch();
 console.log('Бот запущен!');
