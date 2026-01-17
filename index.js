@@ -68,6 +68,6 @@ const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/m
 }, { timeout: 30000 });
 const answer = res.data.candidates[0].content.parts[0].text;
 ctx.reply(answer, { parse_mode: 'Markdown' });
-
+});
 console.log('ЯДЕРНЫЙ БОТ 2025 РАБОТАЕТ 24/7');
 bot.launch();
