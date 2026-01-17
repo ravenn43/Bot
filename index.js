@@ -61,13 +61,36 @@ bot.on('text', async (ctx) => {
     return;
   }
 
-  ctx.replyWithChatAction('typing');
-const res = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
-  contents: [{ role: 'user', parts: [{ text: text }] }],
-  safetySettings: [{ category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }]
-}, { timeout: 30000 });
-const answer = res.data.candidates[0].content.parts[0].text;
-ctx.reply(answer, { parse_mode: 'Markdown' });
-});
-console.log('ЯДЕРНЫЙ БОТ 2025 РАБОТАЕТ 24/7');
-bot.launch();
+          ctx.replyWithChatAction('typing');
+
+        try {
+          const res = await axios.post(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+            contents: [{
+              role: "user",
+              parts: [{ text: text }]
+            }],
+            generationConfig: {
+              temperature: 0.9,
+              maxOutputTokens: 2048
+            },
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
+          }, { timeout: 30000 });
+
+          const answer = res.data.candidates[0].content.parts[0].text;
+          ctx.reply(answer, { parse_mode: 'Markdown' });
+
+        } catch (err) {
+          // Если Gemini вдруг ляжет — мгновенно переключаемся на Claude 3.5 (бесплатно навсегда)
+          ctx.reply('Gemini на секунду прилёг... Ща будет Claude 3.5 🔥');
+          const backup = await axios.post('https://api.free-gpt.ru/v1/chat/completions', {
+            model: "claude-3.5-sonnet",
+            messages: [{ role: "user", content: text }],
+            temperature: 0.9
+          });
+          ctx.reply(backup.data.choices[0].message.content, { parse_mode: 'Markdown' });
+        }
